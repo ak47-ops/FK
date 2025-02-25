@@ -1,0 +1,5 @@
+Flask==2.2.5
+openai==0.27.8
+textstat==0.7.1
+Werkzeug==2.2.3
+python-dotenv==1.0.0

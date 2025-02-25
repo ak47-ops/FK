@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Project Details - {{ project_name }}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .table-container {
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="container mx-auto">
+    <h1 class="text-3xl font-bold mb-4">Project: {{ project_name }}</h1>
+    <div class="table-container">
+      {% if logs %}
+      <table class="min-w-full bg-white border border-gray-300">
+        <thead class="bg-gray-200">
+          <tr>
+            <th class="py-2 px-4 border">Timestamp</th>
+            <th class="py-2 px-4 border">Chosen Platform</th>
+            <th class="py-2 px-4 border">Chosen Region</th>
+            <th class="py-2 px-4 border">Chosen Education</th>
+            <th class="py-2 px-4 border">Chosen Age</th>
+            <th class="py-2 px-4 border">Target Score</th>
+            <th class="py-2 px-4 border">Target Read Time</th>
+            <th class="py-2 px-4 border">Original Text</th>
+            <th class="py-2 px-4 border">Modified Text</th>
+            <th class="py-2 px-4 border">Metrics Summary</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in logs %}
+          <tr>
+            <td class="py-2 px-4 border">{{ log['Timestamp'] }}</td>
+            <td class="py-2 px-4 border">{{ log.get("Chosen Platform", "N/A") }}</td>
+            <td class="py-2 px-4 border">{{ log.get("Chosen Region", "N/A") }}</td>
+            <td class="py-2 px-4 border">{{ log.get("Chosen Education", "N/A") }}</td>
+            <td class="py-2 px-4 border">{{ log.get("Chosen Age", "N/A") }}</td>
+            <td class="py-2 px-4 border">{{ log.get("Target Score", "N/A") }}</td>
+            <td class="py-2 px-4 border">{{ log.get("Target Read Time", "N/A") }}</td>
+            <td class="py-2 px-4 border">{{ log.get("Original Text") or log.get("originalText") or "N/A" }}</td>
+            <td class="py-2 px-4 border">{{ log.get("Modified Text") or log.get("modifiedText") or "N/A" }}</td>
+            <td class="py-2 px-4 border">
+              FK: {{ log.get('Flesch-Kincaid','') }},
+              Reading Ease: {{ log.get('Reading Ease','') }},
+              Avg Word Len: {{ log.get('Average Word Length','') }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+        <p>No logs found for this project.</p>
+      {% endif %}
+    </div>
+    <div class="mt-6">
+      <a href="{{ url_for('projects_view') }}" class="bg-blue-500 text-white px-4 py-2 rounded">Back to Projects</a>
+      <a href="{{ url_for('analyzer') }}" class="bg-green-500 text-white px-4 py-2 rounded ml-4">Go to Analyzer</a>
+    </div>
+  </div>
+</body>
+</html>

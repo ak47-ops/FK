@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Text Metrics Analyzer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js for visualizations -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* Optional: Style the highlighted text block */
+    #highlighted-text-display {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      padding: 0.75rem;
+      border: 1px solid #d1d5db;
+      border-radius: 0.375rem;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen m-0 p-0">
+  <div id="layout" class="flex flex-row w-full h-screen">
+    <!-- LEFT COLUMN: SEO, Text Stats, and Issues -->
+    <div id="seo-section" class="hidden bg-white shadow-md p-6 flex-shrink-0 max-h-screen overflow-y-auto" style="width: 20%;">
+      <h1 class="text-xl font-semibold text-gray-700 mb-2">SEO Stats</h1>
+      <p><strong>Word Count:</strong> <span id="seo-wordcount"></span></p>
+      <p class="mt-2"><strong>Top Words:</strong> <span id="seo-topwords"></span></p>
+      <p class="mt-4"><strong>Extracted Keywords:</strong> <span id="seo-extracted-keywords"></span></p>
+      <!-- Text Stats -->
+      <div id="text-stats" class="mt-4">
+        <h2 class="text-xl font-semibold text-gray-700 mb-2">Text Stats</h2>
+        <ul id="text-stats-list" class="space-y-1"></ul>
+      </div>
+      <!-- Issues with Text -->
+      <div id="text-issues" class="mt-4">
+        <h2 class="text-xl font-semibold text-gray-700 mb-2">Issues with Text</h2>
+        <ul id="text-issues-list" class="space-y-1"></ul>
+      </div>
+    </div>
+
+    <!-- MIDDLE COLUMN: MAIN CONTENT -->
+    <div id="main-section" class="w-full h-full p-6 overflow-y-auto transition-all duration-300 ease-in-out">
+      <div class="bg-white shadow-md rounded-lg p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h1 class="text-2xl font-bold text-gray-700">Text Metrics Analyzer</h1>
+          <a href="{{ url_for('home') }}" class="bg-gray-500 text-white py-2 px-4 rounded">Home</a>
+        </div>
+        <!-- FORM -->
+        <form id="text-form" class="space-y-4">
+          <textarea id="text-input" name="text" placeholder="Enter your text here..." required
+                    class="w-full p-4 h-48 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+          <button type="submit" class="w-full bg-blue-500 text-white py-2 px-4 rounded-lg font-semibold hover:bg-blue-600">Analyze</button>
+        </form>
+        <!-- Highlighted Issues Section (separate from the original text) -->
+        <div id="highlighted-text-display" class="hidden"></div>
+        <!-- ANALYSIS RESULTS -->
+        <div id="results" class="mt-6 hidden">
+          <h2 class="text-xl font-semibold text-gray-700 mb-2">Analysis Results (Original Text)</h2>
+          <ul id="results-list" class="space-y-1"></ul>
+        </div>
+        <!-- MODIFY SECTION -->
+        <div id="modify-section" class="mt-6 hidden">
+          <h2 class="text-xl font-semibold text-gray-700 mb-2">Modify Text</h2>
+          <!-- Sliders -->
+          <div class="mb-4">
+            <label for="target-score" class="block text-sm font-medium text-gray-600">Flesch-Kincaid Target Score</label>
+            <input type="range" id="target-score" min="30" max="100" step="1" value="60" class="w-full"/>
+            <p class="text-sm text-gray-600 mt-2">
+              Target Score: <span id="target-score-value">60</span> - <span id="target-score-desc" class="font-semibold">Standard (9th-10th grade, moderately challenging)</span>
+            </p>
+          </div>
+          <div class="mb-4">
+            <label for="target-grade" class="block text-sm font-medium text-gray-600">Target Grade Level</label>
+            <input type="range" id="target-grade" min="1" max="12" step="1" value="10" class="w-full"/>
+            <p class="text-sm text-gray-600 mt-2">
+              Grade Level: <span id="target-grade-value">10</span> - <span id="target-grade-desc" class="font-semibold">Fairly Difficult (11th-12th grade, college level)</span>
+            </p>
+          </div>
+          <div class="mb-4">
+            <label for="target-read-time" class="block text-sm font-medium text-gray-600">Target Reading Time</label>
+            <input type="range" id="target-read-time" min="10" max="300" step="10" value="30" class="w-full"/>
+            <p class="text-sm text-gray-600 mt-2">
+              Reading Time: <span id="target-read-time-value">30</span> seconds
+            </p>
+          </div>
+          <!-- Additional Buttons for Platform, Region, Education, Age -->
+          <div class="mb-4">
+            <h3 class="text-sm font-medium text-gray-600">Choose Platform</h3>
+            <div class="flex flex-wrap gap-2 mt-2" id="platform-buttons">
+              <button type="button" class="platform-btn bg-gray-200 px-3 py-1 rounded" data-value="General">General</button>
+              <button type="button" class="platform-btn bg-gray-200 px-3 py-1 rounded" data-value="Facebook">Facebook</button>
+              <button type="button" class="platform-btn bg-gray-200 px-3 py-1 rounded" data-value="LinkedIn">LinkedIn</button>
+              <button type="button" class="platform-btn bg-gray-200 px-3 py-1 rounded" data-value="Twitter/X">Twitter/X</button>
+              <button type="button" class="platform-btn bg-gray-200 px-3 py-1 rounded" data-value="Reddit">Reddit</button>
+              <button type="button" class="platform-btn bg-gray-200 px-3 py-1 rounded" data-value="Instagram">Instagram</button>
+              <button type="button" class="platform-btn bg-gray-200 px-3 py-1 rounded" data-value="YouTube">YouTube</button>
+            </div>
+          </div>
+          <div class="mb-4">
+            <h3 class="text-sm font-medium text-gray-600">Choose Region</h3>
+            <div class="flex flex-wrap gap-2 mt-2" id="region-buttons">
+              <button type="button" class="region-btn bg-gray-200 px-3 py-1 rounded" data-value="General">General</button>
+              <button type="button" class="region-btn bg-gray-200 px-3 py-1 rounded" data-value="USA/Canada/UK/Aus/NZ">USA/Canada/UK/Aus/NZ</button>
+              <button type="button" class="region-btn bg-gray-200 px-3 py-1 rounded" data-value="Western Europe">Western Europe</button>
+              <button type="button" class="region-btn bg-gray-200 px-3 py-1 rounded" data-value="Eastern Europe">Eastern Europe</button>
+              <button type="button" class="region-btn bg-gray-200 px-3 py-1 rounded" data-value="Latin America">Latin America</button>
+              <button type="button" class="region-btn bg-gray-200 px-3 py-1 rounded" data-value="MENA">MENA</button>
+              <button type="button" class="region-btn bg-gray-200 px-3 py-1 rounded" data-value="East Asia">East Asia</button>
+            </div>
+          </div>
+          <div class="mb-4">
+            <h3 class="text-sm font-medium text-gray-600">Choose Education</h3>
+            <div class="flex flex-wrap gap-2 mt-2" id="education-buttons">
+              <button type="button" class="education-btn bg-gray-200 px-3 py-1 rounded" data-value="General">General</button>
+              <button type="button" class="education-btn bg-gray-200 px-3 py-1 rounded" data-value="High School">High School</button>
+              <button type="button" class="education-btn bg-gray-200 px-3 py-1 rounded" data-value="College">College</button>
+              <button type="button" class="education-btn bg-gray-200 px-3 py-1 rounded" data-value="Postgraduate">Postgraduate</button>
+            </div>
+          </div>
+          <div class="mb-4">
+            <h3 class="text-sm font-medium text-gray-600">Choose Age</h3>
+            <div class="flex flex-wrap gap-2 mt-2" id="age-buttons">
+              <button type="button" class="age-btn bg-gray-200 px-3 py-1 rounded" data-value="General">General</button>
+              <button type="button" class="age-btn bg-gray-200 px-3 py-1 rounded" data-value="Teens">Teens</button>
+              <button type="button" class="age-btn bg-gray-200 px-3 py-1 rounded" data-value="Young Adults">Young Adults</button>
+              <button type="button" class="age-btn bg-gray-200 px-3 py-1 rounded" data-value="Adults">Adults</button>
+              <button type="button" class="age-btn bg-gray-200 px-3 py-1 rounded" data-value="Seniors">Seniors</button>
+            </div>
+          </div>
+          <button id="modify-button" class="mt-4 w-full bg-green-500 text-white py-2 px-4 rounded-lg font-semibold hover:bg-green-600">Adjust Text</button>
+        </div>
+        <!-- MODIFIED RESULTS -->
+        <div id="modified-results" class="mt-6 hidden">
+          <h2 class="text-xl font-semibold text-gray-700 mb-2">Modified Text</h2>
+          <textarea id="modified-text" readonly class="w-full p-4 border border-gray-300 rounded-lg bg-gray-100 resize-y"></textarea>
+          <div class="mt-4 p-4 border rounded bg-gray-50">
+            <h3 class="text-lg font-bold mb-2">Modified Text Stats</h3>
+            <ul id="modified-stats-list" class="space-y-1"></ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: VISUALIZATIONS -->
+    <div id="visualizations" class="hidden flex-shrink-0 max-h-screen overflow-y-auto bg-white shadow-md p-6" style="width: 40%;">
+      <h2 class="text-xl font-semibold text-gray-700 mb-4">Readability Visualizations</h2>
+      <!-- Platform Visualization -->
+      <div class="mb-6">
+        <h3 class="text-lg font-semibold text-gray-700 mb-4">Platform-Specific Example</h3>
+        <div class="h-64 mb-4">
+          <canvas id="platformChart" class="w-full h-full"></canvas>
+        </div>
+        <div class="bg-gray-50 p-3 rounded-lg shadow">
+          <table class="min-w-full text-left border border-gray-200">
+            <thead class="bg-gray-100">
+              <tr>
+                <th class="px-4 py-2 border-b">Platform</th>
+                <th class="px-4 py-2 border-b">FK Range</th>
+                <th class="px-4 py-2 border-b">Comprehension Rate</th>
+                <th class="px-4 py-2 border-b">Your Score Fit?</th>
+                <th class="px-4 py-2 border-b">New Score Fit?</th>
+              </tr>
+            </thead>
+            <tbody id="platform-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Education Visualization -->
+      <div class="mb-6">
+        <h3 class="text-lg font-semibold text-gray-700 mb-4">Education-Specific Example</h3>
+        <div class="h-64 mb-4">
+          <canvas id="educationChart" class="w-full h-full"></canvas>
+        </div>
+        <div class="bg-gray-50 p-3 rounded-lg shadow">
+          <table class="min-w-full text-left border border-gray-200">
+            <thead class="bg-gray-100">
+              <tr>
+                <th class="px-4 py-2 border-b">Education</th>
+                <th class="px-4 py-2 border-b">FK Range</th>
+                <th class="px-4 py-2 border-b">Comprehension Rate</th>
+                <th class="px-4 py-2 border-b">Your Score Fit?</th>
+                <th class="px-4 py-2 border-b">New Score Fit?</th>
+              </tr>
+            </thead>
+            <tbody id="education-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Age Visualization -->
+      <div class="mb-6">
+        <h3 class="text-lg font-semibold text-gray-700 mb-4">Age-Specific Example</h3>
+        <div class="h-64 mb-4">
+          <canvas id="ageChart" class="w-full h-full"></canvas>
+        </div>
+        <div class="bg-gray-50 p-3 rounded-lg shadow">
+          <table class="min-w-full text-left border border-gray-200">
+            <thead class="bg-gray-100">
+              <tr>
+                <th class="px-4 py-2 border-b">Age</th>
+                <th class="px-4 py-2 border-b">FK Range</th>
+                <th class="px-4 py-2 border-b">Comprehension Rate</th>
+                <th class="px-4 py-2 border-b">Your Score Fit?</th>
+                <th class="px-4 py-2 border-b">New Score Fit?</th>
+              </tr>
+            </thead>
+            <tbody id="age-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JS Section -->
+  <script>
+    // --- Data definitions for charts ---
+    const platformData = [
+      { platform: "General", minFK: 6, maxFK: 12, rangeLabel: "6–12", comprehensionRate: "90% for FK ≤ 9" },
+      { platform: "Facebook", minFK: 6, maxFK: 9, rangeLabel: "6–9", comprehensionRate: "90% for FK ≤ 9" },
+      { platform: "LinkedIn", minFK: 10, maxFK: 14, rangeLabel: "10–14", comprehensionRate: "85% for FK ≤ 12, 60% for FK ≤ 14" },
+      { platform: "Twitter/X", minFK: 6, maxFK: 12, rangeLabel: "6–12", comprehensionRate: "80% for FK ≤ 10, 50% for FK ≤ 12" },
+      { platform: "Reddit", minFK: 8, maxFK: 14, rangeLabel: "8–14", comprehensionRate: "70% for FK ≤ 12" },
+      { platform: "Instagram", minFK: 6, maxFK: 9, rangeLabel: "6–9", comprehensionRate: "95% for FK ≤ 8" },
+      { platform: "YouTube", minFK: 6, maxFK: 10, rangeLabel: "6–10", comprehensionRate: "90% for FK ≤ 9" },
+    ];
+    const educationData = [
+      { education: "General", minFK: 5, maxFK: 12, rangeLabel: "5–12", comprehensionRate: "95% for FK ≤ 8" },
+      { education: "High School", minFK: 8, maxFK: 14, rangeLabel: "8–14", comprehensionRate: "90% for FK ≤ 10" },
+      { education: "College", minFK: 10, maxFK: 16, rangeLabel: "10–16", comprehensionRate: "80% for FK ≤ 12" },
+      { education: "Postgraduate", minFK: 12, maxFK: 20, rangeLabel: "12–20", comprehensionRate: "70% for FK ≤ 14" },
+    ];
+    const ageData = [
+      { age: "General", minFK: 6, maxFK: 12, rangeLabel: "6–12", comprehensionRate: "90% for FK ≤ 9" },
+      { age: "Teens", minFK: 8, maxFK: 14, rangeLabel: "8–14", comprehensionRate: "85% for FK ≤ 12" },
+      { age: "Young Adults", minFK: 10, maxFK: 16, rangeLabel: "10–16", comprehensionRate: "80% for FK ≤ 12" },
+      { age: "Adults", minFK: 12, maxFK: 18, rangeLabel: "12–18", comprehensionRate: "75% for FK ≤ 14" },
+      { age: "Seniors", minFK: 14, maxFK: 20, rangeLabel: "14–20", comprehensionRate: "70% for FK ≤ 16" },
+    ];
+
+    // --- Helper descriptors ---
+    function getFKScoreDescriptor(score) {
+      if (score >= 90) return "Very Easy (5th grade or below, easily understood by an 11-year-old)";
+      if (score >= 80) return "Easy (6th-8th grade, fairly easy to read)";
+      if (score >= 70) return "Fairly Easy (Standard reading level, easily understood by teenagers)";
+      if (score >= 60) return "Standard (Plain English, suitable for most readers)";
+      if (score >= 50) return "Fairly Difficult (Somewhat challenging, college-level text)";
+      if (score >= 30) return "Difficult (Best for academics and professionals, complex text)";
+      return "Very Difficult (Extremely complex, suitable for specialists)";
+    }
+    function getGradeLevelDescriptor(grade) {
+      if (grade <= 5) return "Very Easy (Elementary level, simple text)";
+      if (grade <= 8) return "Easy (Middle school level, suitable for teenagers)";
+      if (grade <= 10) return "Standard (High school level, requires some reading skills)";
+      if (grade <= 12) return "Fairly Difficult (College-level text, challenging)";
+      return "Difficult (Advanced level, suitable for professionals)";
+    }
+
+    // --- Sliders ---
+    const targetScoreInput = document.getElementById("target-score");
+    const targetGradeInput = document.getElementById("target-grade");
+    const targetReadTimeInput = document.getElementById("target-read-time");
+
+    targetScoreInput.addEventListener("input", function() {
+      const score = this.value;
+      document.getElementById("target-score-value").textContent = score;
+      document.getElementById("target-score-desc").textContent = getFKScoreDescriptor(score);
+    });
+    targetGradeInput.addEventListener("input", function() {
+      const grade = this.value;
+      document.getElementById("target-grade-value").textContent = grade;
+      document.getElementById("target-grade-desc").textContent = getGradeLevelDescriptor(grade);
+    });
+    targetReadTimeInput.addEventListener("input", function() {
+      document.getElementById("target-read-time-value").textContent = this.value;
+    });
+
+    // --- Track chosen parameters ---
+    let chosenPlatform = "General";
+    let chosenRegion = "General";
+    let chosenEducation = "General";
+    let chosenAge = "General";
+
+    document.querySelectorAll(".platform-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        chosenPlatform = btn.dataset.value;
+        document.querySelectorAll(".platform-btn").forEach(b => b.classList.remove("bg-blue-300"));
+        btn.classList.add("bg-blue-300");
+      });
+    });
+    document.querySelectorAll(".region-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        chosenRegion = btn.dataset.value;
+        document.querySelectorAll(".region-btn").forEach(b => b.classList.remove("bg-blue-300"));
+        btn.classList.add("bg-blue-300");
+      });
+    });
+    document.querySelectorAll(".education-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        chosenEducation = btn.dataset.value;
+        document.querySelectorAll(".education-btn").forEach(b => b.classList.remove("bg-blue-300"));
+        btn.classList.add("bg-blue-300");
+      });
+    });
+    document.querySelectorAll(".age-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        chosenAge = btn.dataset.value;
+        document.querySelectorAll(".age-btn").forEach(b => b.classList.remove("bg-blue-300"));
+        btn.classList.add("bg-blue-300");
+      });
+    });
+
+    // --- SEO Stats ---
+    function showSeoStats(data) {
+      document.getElementById('seo-wordcount').textContent = data.wordCount;
+      const topWordsStr = data.topWords.map(([w, freq]) => `${w}(${freq})`).join(", ");
+      document.getElementById('seo-topwords').textContent = topWordsStr;
+    }
+    function showExtractedKeywords(keywords) {
+      document.getElementById('seo-extracted-keywords').textContent = keywords && keywords.length ? keywords.join(', ') : "(None)";
+    }
+
+    // --- Populate additional text stats ---
+    function populateTextStats(data) {
+      const statsList = document.getElementById('text-stats-list');
+      statsList.innerHTML = `
+        <li><strong>Letter Count:</strong> ${data.letterCount}</li>
+        <li><strong>Sentence Count:</strong> ${data.sentenceCount}</li>
+        <li><strong>Word Count:</strong> ${data.wordCount}</li>
+        <p><strong>Average Word Length:</strong> <span id="average-word-length">${data.averageWordLength}</span></p>
+        <li><strong>Unique Word Count:</strong> ${data.uniqueWordCount}</li>
+        <li><strong>Total Syllables:</strong> ${data.totalSyllables}</li>
+        <li><strong>Average Syllables per Word:</strong> ${data.avgSyllablesPerWord}</li>
+        <li><strong>Words with Three Syllables:</strong> ${data.wordsThreeSyllables}</li>
+        <li><strong>% of Words with Three Syllables:</strong> ${data.percWordsThreeSyllables}%</li>
+        <li><strong>Longest Sentence:</strong> ${data.longestSentence}</li>
+        <li><strong>Paragraph Count:</strong> ${data.paragraphCount}</li>
+        <li><strong>Average Speaking Time:</strong> ${data.avgSpeakingTime} min</li>
+        <li><strong>Average Reading Time:</strong> ${data.avgReadingTime} min</li>
+        <li><strong>Average Writing Time:</strong> ${data.avgWritingTime} min</li>
+      `;
+    }
+
+    // --- Populate issues with text ---
+    function populateTextIssues(data) {
+      const issuesList = document.getElementById('text-issues-list');
+      issuesList.innerHTML = `
+        <li><strong>Avg. Syllables/Word (Aim: 1.4):</strong> ${data.avgSyllablesPerWord}</li>
+        <li><strong>Avg. Words/Sentence:</strong> ${data.avgWordsPerSentence}</li>
+        <li><strong>Avg. Words/Paragraph:</strong> ${data.avgWordsPerParagraph}</li>
+        <li><strong>Avg. Sentences/Paragraph:</strong> ${data.avgSentencesPerParagraph}</li>
+        <li><strong>Avg. Characters/Word:</strong> ${data.avgCharactersPerWord}</li>
+        <li><strong>Words with >4 Syllables:</strong> ${data.wordsMoreThan4Syllables}</li>
+        <li><strong>% of Words with >4 Syllables:</strong> ${data.percWordsMoreThan4Syllables}%</li>
+        <li><strong>Words with >12 Letters:</strong> ${data.wordsMoreThan12Letters}</li>
+        <li><strong>% of Words with >12 Letters:</strong> ${data.percWordsMoreThan12Letters}%</li>
+      `;
+    }
+
+    // --- Update highlight (only called after Analyze or Modify) ---
+    function updateHighlight(text) {
+      let sentences = text.match(/[^\.!\?]+[\.!\?]+[\s]*/g);
+      if (!sentences) {
+        sentences = [text];
+      }
+      function countSyllables(word) {
+        word = word.toLowerCase();
+        if (word.length <= 3) return 1;
+        word = word.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, '');
+        word = word.replace(/^y/, '');
+        const matches = word.match(/[aeiouy]{1,2}/g);
+        return matches ? matches.length : 1;
+      }
+      let highlightedHTML = sentences.map(sentence => {
+        const sentenceWords = sentence.split(/\s+/);
+        const sentenceSyllables = sentenceWords.reduce((sum, w) => sum + countSyllables(w), 0);
+        let sentenceClass = "";
+        if (sentenceSyllables > 30) {
+          sentenceClass = "bg-red-200";
+        } else if (sentenceSyllables > 25) {
+          sentenceClass = "bg-yellow-200";
+        } else {
+          sentenceClass = "bg-green-100";
+        }
+        const processedWords = sentenceWords.map(word => {
+          const cleanWord = word.replace(/[^\w]/g, "");
+          const syl = countSyllables(cleanWord);
+          if (syl > 3) {
+            return `<span class="underline decoration-purple-500" title="Word has ${syl} syllables">${word}</span>`;
+          }
+          return word;
+        });
+        return `<span class="${sentenceClass}" title="Sentence has ${sentenceSyllables} syllables">${processedWords.join(" ")}</span>`;
+      }).join(" ");
+      const displayDiv = document.getElementById("highlighted-text-display");
+      displayDiv.innerHTML = highlightedHTML;
+      displayDiv.classList.remove("hidden");
+    }
+
+    // --- Chart building functions ---
+    let platformChartInstance, educationChartInstance, ageChartInstance;
+    let originalFK = 0;
+    let newFK = 0;
+    function buildPlatformTable(tbodyElem, userFK, newUserFK) {
+      tbodyElem.innerHTML = "";
+      platformData.forEach(item => {
+        const fitsOld = (userFK >= item.minFK && userFK <= item.maxFK) ? "Yes" : "No";
+        const fitsNew = (newUserFK >= item.minFK && newUserFK <= item.maxFK) ? "Yes" : "No";
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td class="px-4 py-2 border-b">${item.platform}</td>
+          <td class="px-4 py-2 border-b">${item.rangeLabel}</td>
+          <td class="px-4 py-2 border-b">${item.comprehensionRate}</td>
+          <td class="px-4 py-2 border-b font-semibold">${fitsOld}</td>
+          <td class="px-4 py-2 border-b font-semibold">${fitsNew}</td>
+        `;
+        tbodyElem.appendChild(row);
+      });
+    }
+    function buildPlatformChart(ctx, userFK, newUserFK) {
+      if (platformChartInstance) platformChartInstance.destroy();
+      const labels = platformData.map(d => d.platform);
+      const minVals = platformData.map(d => d.minFK);
+      const maxVals = platformData.map(d => d.maxFK);
+      const yourVals = platformData.map(() => userFK);
+      const yourNewVals = platformData.map(() => newUserFK);
+      platformChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            { type: 'bar', label: 'Min FK', data: minVals, backgroundColor: 'rgba(75, 192, 192, 0.6)' },
+            { type: 'bar', label: 'Max FK', data: maxVals, backgroundColor: 'rgba(153, 102, 255, 0.6)' },
+            { type: 'line', label: 'Original FK', data: yourVals, borderColor: 'rgba(255, 99, 132, 1)', borderWidth: 2, fill: false },
+            { type: 'line', label: 'New FK', data: yourNewVals, borderColor: 'rgba(54, 162, 235, 1)', borderWidth: 2, fill: false }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { y: { beginAtZero: true, title: { display: true, text: 'Flesch-Kincaid Score' } } }
+        }
+      });
+    }
+    function buildEducationTable(tbodyElem, userFK, newUserFK) {
+      tbodyElem.innerHTML = "";
+      educationData.forEach(item => {
+        const fitsOld = (userFK >= item.minFK && userFK <= item.maxFK) ? "Yes" : "No";
+        const fitsNew = (newUserFK >= item.minFK && newUserFK <= item.maxFK) ? "Yes" : "No";
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td class="px-4 py-2 border-b">${item.education}</td>
+          <td class="px-4 py-2 border-b">${item.rangeLabel}</td>
+          <td class="px-4 py-2 border-b">${item.comprehensionRate}</td>
+          <td class="px-4 py-2 border-b font-semibold">${fitsOld}</td>
+          <td class="px-4 py-2 border-b font-semibold">${fitsNew}</td>
+        `;
+        tbodyElem.appendChild(row);
+      });
+    }
+    function buildEducationChart(ctx, userFK, newUserFK) {
+      if (educationChartInstance) educationChartInstance.destroy();
+      const labels = educationData.map(d => d.education);
+      const minVals = educationData.map(d => d.minFK);
+      const maxVals = educationData.map(d => d.maxFK);
+      const yourVals = educationData.map(() => userFK);
+      const yourNewVals = educationData.map(() => newUserFK);
+      educationChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            { type: 'bar', label: 'Min FK', data: minVals, backgroundColor: 'rgba(75, 192, 192, 0.6)' },
+            { type: 'bar', label: 'Max FK', data: maxVals, backgroundColor: 'rgba(153, 102, 255, 0.6)' },
+            { type: 'line', label: 'Original FK', data: yourVals, borderColor: 'rgba(255, 99, 132, 1)', borderWidth: 2, fill: false },
+            { type: 'line', label: 'New FK', data: yourNewVals, borderColor: 'rgba(54, 162, 235, 1)', borderWidth: 2, fill: false }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { y: { beginAtZero: true, title: { display: true, text: 'Flesch-Kincaid Score' } } }
+        }
+      });
+    }
+    function buildAgeTable(tbodyElem, userFK, newUserFK) {
+      tbodyElem.innerHTML = "";
+      ageData.forEach(item => {
+        const fitsOld = (userFK >= item.minFK && userFK <= item.maxFK) ? "Yes" : "No";
+        const fitsNew = (newUserFK >= item.minFK && newUserFK <= item.maxFK) ? "Yes" : "No";
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td class="px-4 py-2 border-b">${item.age}</td>
+          <td class="px-4 py-2 border-b">${item.rangeLabel}</td>
+          <td class="px-4 py-2 border-b">${item.comprehensionRate}</td>
+          <td class="px-4 py-2 border-b font-semibold">${fitsOld}</td>
+          <td class="px-4 py-2 border-b font-semibold">${fitsNew}</td>
+        `;
+        tbodyElem.appendChild(row);
+      });
+    }
+    function buildAgeChart(ctx, userFK, newUserFK) {
+      if (ageChartInstance) ageChartInstance.destroy();
+      const labels = ageData.map(d => d.age);
+      const minVals = ageData.map(d => d.minFK);
+      const maxVals = ageData.map(d => d.maxFK);
+      const yourVals = ageData.map(() => userFK);
+      const yourNewVals = ageData.map(() => newUserFK);
+      ageChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            { type: 'bar', label: 'Min FK', data: minVals, backgroundColor: 'rgba(75, 192, 192, 0.6)' },
+            { type: 'bar', label: 'Max FK', data: maxVals, backgroundColor: 'rgba(153, 102, 255, 0.6)' },
+            { type: 'line', label: 'Original FK', data: yourVals, borderColor: 'rgba(255, 99, 132, 1)', borderWidth: 2, fill: false },
+            { type: 'line', label: 'New FK', data: yourNewVals, borderColor: 'rgba(54, 162, 235, 1)', borderWidth: 2, fill: false }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { y: { beginAtZero: true, title: { display: true, text: 'Flesch-Kincaid Score' } } }
+        }
+      });
+    }
+
+    // --- Show side columns ---
+    function showSideColumns() {
+      document.getElementById("seo-section").classList.remove("hidden");
+      document.getElementById("visualizations").classList.remove("hidden");
+      const main = document.getElementById("main-section");
+      main.classList.remove("w-full");
+      main.classList.add("w-2/5");
+    }
+
+    // --- Populate standardized metric list ---
+    function populateMetricList(containerElem, data) {
+      containerElem.innerHTML = `
+        <li><strong>Flesch-Kincaid Grade:</strong> ${data.fleschKincaid.toFixed(2)} - ${data.readabilityDescriptor}</li>
+        <li><strong>Reading Ease:</strong> ${data.readingEase.toFixed(2)} - ${data.readingEaseDescriptor}</li>
+        <li><strong>Estimated Reading Time:</strong> ${data.readingTime} minutes</li>
+      `;
+    }
+
+    // --- Main Form Logic ---
+    const textForm = document.getElementById('text-form');
+    const resultsDiv = document.getElementById('results');
+    const resultsList = document.getElementById('results-list');
+    const modifySection = document.getElementById('modify-section');
+    const modifiedResultsDiv = document.getElementById('modified-results');
+    const modifiedText = document.getElementById('modified-text');
+    const modifiedStatsList = document.getElementById('modified-stats-list');
+
+    // --- ANALYZE ---
+    textForm.addEventListener('submit', async function(event) {
+      event.preventDefault();
+      const text = document.getElementById('text-input').value;
+      const response = await fetch('/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ text })
+      });
+      const data = await response.json();
+      if (data.error) {
+        alert(data.error);
+        return;
+      }
+      populateMetricList(resultsList, data);
+      resultsDiv.classList.remove('hidden');
+      modifySection.classList.remove('hidden');
+      showSideColumns();
+      showSeoStats(data);
+      populateTextStats(data);
+      populateTextIssues(data);
+      updateHighlight(text);
+      originalFK = data.fleschKincaid;
+      newFK = data.fleschKincaid;
+      buildPlatformTable(document.getElementById("platform-tbody"), originalFK, newFK);
+      buildPlatformChart(document.getElementById("platformChart").getContext("2d"), originalFK, newFK);
+      buildEducationTable(document.getElementById("education-tbody"), originalFK, newFK);
+      buildEducationChart(document.getElementById("educationChart").getContext("2d"), originalFK, newFK);
+      buildAgeTable(document.getElementById("age-tbody"), originalFK, newFK);
+      buildAgeChart(document.getElementById("ageChart").getContext("2d"), originalFK, newFK);
+    });
+
+    // --- MODIFY ---
+    document.getElementById('modify-button').addEventListener('click', async function() {
+      const text = document.getElementById('text-input').value;
+      const targetScore = targetScoreInput.value;
+      const targetGrade = targetGradeInput.value;
+      const targetReadTime = targetReadTimeInput.value;
+      const response = await fetch('/modify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text,
+          target_score: targetScore,
+          target_grade: targetGrade,
+          target_read_time: targetReadTime,
+          platform: chosenPlatform,
+          region: chosenRegion,
+          education: chosenEducation,
+          age: chosenAge
+        })
+      });
+      const data = await response.json();
+      if (data.error) {
+        alert(data.error);
+        return;
+      }
+      modifiedText.value = data.modifiedText;
+      showExtractedKeywords(data.keywords);
+      populateMetricList(modifiedStatsList, data.modifiedMetrics);
+      modifiedResultsDiv.classList.remove('hidden');
+      newFK = data.modifiedMetrics.fleschKincaid;
+      buildPlatformTable(document.getElementById("platform-tbody"), originalFK, newFK);
+      buildPlatformChart(document.getElementById("platformChart").getContext("2d"), originalFK, newFK);
+      buildEducationTable(document.getElementById("education-tbody"), originalFK, newFK);
+      buildEducationChart(document.getElementById("educationChart").getContext("2d"), originalFK, newFK);
+      buildAgeTable(document.getElementById("age-tbody"), originalFK, newFK);
+      buildAgeChart(document.getElementById("ageChart").getContext("2d"), originalFK, newFK);
+      updateHighlight(data.modifiedText);
+    });
+  </script>
+</body>
+</html>

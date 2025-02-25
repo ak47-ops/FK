@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My Projects</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .table-container {
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="container mx-auto">
+    <h1 class="text-3xl font-bold mb-4">My Projects</h1>
+    <div class="mb-6">
+      <form action="{{ url_for('new_project') }}" method="post" class="flex flex-col gap-2">
+        <input type="text" name="project_name" placeholder="Enter new project name" required class="p-2 border rounded">
+        <button type="submit" class="bg-blue-500 text-white p-2 rounded">Start New Project</button>
+      </form>
+    </div>
+    <h2 class="text-xl font-semibold mb-2">Your Existing Projects</h2>
+    <div class="table-container">
+      {% if projects %}
+      <table class="min-w-full bg-white border border-gray-300">
+        <thead class="bg-gray-200">
+          <tr>
+            <th class="py-2 px-4 border">Timestamp</th>
+            <th class="py-2 px-4 border">Project Name</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for proj in projects %}
+          <tr>
+            <td class="py-2 px-4 border">{{ proj['Timestamp'] }}</td>
+            <td class="py-2 px-4 border">
+              <a href="{{ url_for('project_detail', project_name=proj['Project Name']) }}" class="text-blue-600 hover:underline">
+                {{ proj['Project Name'] }}
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+        <p>No projects found.</p>
+      {% endif %}
+    </div>
+    <div class="mt-6">
+      <a href="{{ url_for('home') }}" class="bg-green-500 text-white px-4 py-2 rounded">Back Home</a>
+    </div>
+  </div>
+</body>
+</html>
